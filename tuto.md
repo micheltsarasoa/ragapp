@@ -1,63 +1,121 @@
-a project based on a video yt : https://www.youtube.com/watch?v=AUQJ9eeP-Ls
+# RAG App — Tutorial
 
-# Initialize project
-> uv init .
+Based on: https://www.youtube.com/watch?v=AUQJ9eeP-Ls
 
-## Requirements
-> uv add fastapi inngest llama-index-core llama-index-readers-file python-dotenv qdrant-client uvicorn streamlit openai
+A Retrieval-Augmented Generation app that lets you upload PDFs and ask questions about them. Built with FastAPI, Inngest, Qdrant, and Streamlit.
 
-## create env
-OPENAI_API_KEY=
+---
 
-## create code inside main.py
-> create functions
-> make it available for uvicorn
-> run : uv run uvicorn main:app
-> will be available on :8000
+## 1. Initialize the project
 
-## run dev server, connect the :8000 and control inngest server
-> npx inngest-cli@latest dev -u http://127.0.0.1:8000/api/inngest --no-discovery
+```bash
+uv init .
+uv add fastapi inngest llama-index-core llama-index-readers-file python-dotenv qdrant-client uvicorn streamlit openai
+```
 
+---
 
+## 2. Environment variables
 
-# Implement vector database
+Create a `.env` file at the root:
 
-## create qdrant_storage folder
-> 
+```env
+OPENAI_API_KEY=your_openai_api_key_here
+```
 
-1. Run locally qdrant in docker in our computer
-> docker run -d --name qdrantRagDb -p 6333:6333 -v "$(pwd)/qdrant_storage:/qdrant/storage" 
+---
 
-2. create vector_db.py to able to connect into the vector docker db
+## 3. Run the vector database (Qdrant)
 
+Start Qdrant locally via Docker. Data is persisted to `./qdrant_storage`:
 
-# INNGEST = see inngest documentation, in inngest functions, steps
+```bash
+docker run -d \
+  --name qdrantRagDb \
+  -p 6333:6333 \
+  -v "$(pwd)/qdrant_storage:/qdrant/storage" \
+  qdrant/qdrant
+```
 
+---
 
-## invoke rag_app
->
+## 4. Run the FastAPI backend
+
+```bash
+uv run uvicorn main:app
+```
+
+Available at: http://localhost:8000
+
+---
+
+## 5. Run the Inngest dev server
+
+Inngest orchestrates the background functions. Connect it to your local FastAPI backend:
+
+```bash
+npx inngest-cli@latest dev -u http://127.0.0.1:8000/api/inngest --no-discovery
+```
+
+Available at: http://localhost:8288
+
+---
+
+## 6. Run the Streamlit frontend
+
+```bash
+uv run streamlit run streamlit_app.py
+```
+
+Available at: http://localhost:8501
+
+---
+
+## How it works
+
+### Ingest a PDF
+1. Upload a PDF in the Streamlit UI.
+2. The file is saved to `uploads/` and a `rag/ingest_pdf` event is sent to Inngest.
+3. Inngest calls the FastAPI function which:
+   - Chunks the PDF into ~1000-character segments (200-char overlap)
+   - Embeds each chunk with OpenAI `text-embedding-3-large`
+   - Stores vectors + metadata in Qdrant
+
+### Ask a question
+1. Type a question in the Streamlit UI.
+2. A `rag/query_pdf_ai` event is sent to Inngest.
+3. Inngest calls the FastAPI function which:
+   - Embeds the question
+   - Retrieves the top-k most similar chunks from Qdrant
+   - Passes them as context to `gpt-4o-mini`
+   - Returns the answer + source documents
+
+---
+
+## Test the ingest function manually (Inngest UI)
+
+In the Inngest dev UI (http://localhost:8288), you can trigger `rag/ingest_pdf` manually:
+
 ```json
 {
   "data": {
-    "pdf_path": "C:\\Users\\jms\\OneDrive - SPC CONSULTANTS\\Applications\\Certificate of Analysis.pdf"
+    "pdf_path": "/absolute/path/to/your/document.pdf",
+    "source_id": "my-document.pdf"
   }
 }
 ```
 
+---
 
-# Querying vectorDb
+## Rate limiting (already configured)
 
+The ingest function is protected by:
+- **Throttle:** max 2 requests per minute
+- **Rate limit:** max 1 ingest per `source_id` every 4 hours (prevents re-ingesting the same document)
 
-# adding the frontend
+---
 
-## write steamlit script
+## Next steps
 
-## run 
-> uv run streamlit run .\streamlit_app.py
-
-# "aller plus loin" : to do next for testing
- - throttling
- - rate limit
-
- - See deploiment documentation in inngest to deploy in production
- - move openai key to grok api key
+- See `docs/` for architecture details, access control design, and improvement suggestions.
+- For production deployment, refer to the [Inngest deployment docs](https://www.inngest.com/docs).
