@@ -4,6 +4,8 @@ import pydantic
 class RAGChunkAndSrc(pydantic.BaseModel):
     chunks: list[str]
     source_id: str = None
+    user_id: str = "anonymous"
+    visibility: str = "private"
 
 
 class RAGUpsertResult(pydantic.BaseModel):
@@ -13,9 +15,11 @@ class RAGUpsertResult(pydantic.BaseModel):
 class RAGSearchResult(pydantic.BaseModel):
     contexts: list[str]
     sources: list[str]
+    scores: list[float] = []
 
 
-class RAQQueryResult(pydantic.BaseModel):
+class RAGQueryResult(pydantic.BaseModel):
     answer: str
     sources: list[str]
+    scores: list[float] = []
     num_contexts: int

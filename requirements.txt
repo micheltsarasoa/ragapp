@@ -1,0 +1,11 @@
+fastapi
+inngest
+llama-index-core
+llama-index-readers-file
+python-dotenv
+qdrant-client>=1.7.0
+uvicorn
+streamlit
+openai
+fastembed
+docx2txt

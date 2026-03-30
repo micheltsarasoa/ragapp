@@ -2,16 +2,19 @@
 
 Based on: https://www.youtube.com/watch?v=AUQJ9eeP-Ls
 
-A Retrieval-Augmented Generation app that lets you upload PDFs and ask questions about them. Built with FastAPI, Inngest, Qdrant, and Streamlit.
+A Retrieval-Augmented Generation app that lets you upload documents and ask questions about them. Built with FastAPI, Inngest, Qdrant, and Streamlit.
 
 ---
 
-## 1. Initialize the project
+## 1. Install dependencies
 
 ```bash
 uv init .
-uv add fastapi inngest llama-index-core llama-index-readers-file python-dotenv qdrant-client uvicorn streamlit openai
+uv add fastapi inngest llama-index-core llama-index-readers-file python-dotenv \
+       qdrant-client uvicorn streamlit openai fastembed docx2txt
 ```
+
+> **Note:** `fastembed` downloads embedding model weights on first run (~130 MB). No OpenAI key required for embeddings.
 
 ---
 
@@ -20,8 +23,12 @@ uv add fastapi inngest llama-index-core llama-index-readers-file python-dotenv q
 Create a `.env` file at the root:
 
 ```env
-OPENAI_API_KEY=your_openai_api_key_here
+GROQ_API_KEY=your_groq_api_key_here   # LLM inference (free tier available at console.groq.com)
+LLM_MODEL=llama3-8b-8192              # optional, this is the default
+API_BASE=http://127.0.0.1:8000        # optional, used by Streamlit for streaming
 ```
+
+> **Tip:** Get a free Groq API key at https://console.groq.com. Groq is significantly faster and cheaper than OpenAI for inference.
 
 ---
 
@@ -46,12 +53,11 @@ uv run uvicorn main:app
 ```
 
 Available at: http://localhost:8000
+Streaming query endpoint: http://localhost:8000/api/stream_query
 
 ---
 
 ## 5. Run the Inngest dev server
-
-Inngest orchestrates the background functions. Connect it to your local FastAPI backend:
 
 ```bash
 npx inngest-cli@latest dev -u http://127.0.0.1:8000/api/inngest --no-discovery
@@ -68,54 +74,91 @@ uv run streamlit run streamlit_app.py
 ```
 
 Available at: http://localhost:8501
+Document management page: http://localhost:8501/Manage_Documents
 
 ---
 
 ## How it works
 
-### Ingest a PDF
-1. Upload a PDF in the Streamlit UI.
-2. The file is saved to `uploads/` and a `rag/ingest_pdf` event is sent to Inngest.
-3. Inngest calls the FastAPI function which:
-   - Chunks the PDF into ~1000-character segments (200-char overlap)
-   - Embeds each chunk with OpenAI `text-embedding-3-large`
-   - Stores vectors + metadata in Qdrant
+### Ingest a document
+1. Upload a PDF, DOCX, TXT, or MD file in the Streamlit UI.
+2. Choose visibility: **private** (only you) or **public** (all users).
+3. A `rag/ingest_pdf` event is sent to Inngest.
+4. The backend:
+   - Chunks the document (~1000 chars, 200 overlap)
+   - Embeds each chunk: dense (`BAAI/bge-small-en-v1.5`, 384-dim) + sparse (BM25)
+   - Deletes any previous vectors for this source (dedup)
+   - Stores vectors + metadata (`user_id`, `visibility`) in Qdrant
+   - Records metadata in `ragapp.db` (SQLite)
 
 ### Ask a question
-1. Type a question in the Streamlit UI.
-2. A `rag/query_pdf_ai` event is sent to Inngest.
-3. Inngest calls the FastAPI function which:
-   - Embeds the question
-   - Retrieves the top-k most similar chunks from Qdrant
-   - Passes them as context to `gpt-4o-mini`
-   - Returns the answer + source documents
+1. Type a question and choose **streaming** (real-time tokens) or **Inngest** (observable).
+2. The backend:
+   - Embeds the question (same models)
+   - Runs hybrid search: dense cosine + BM25, fused with RRF
+   - Filters results by access: your documents + public documents
+   - Passes top-k chunks as context to Groq LLM
+   - Returns answer + source document names + relevance scores
+
+### Manage documents
+Visit the **Manage Documents** page (sidebar) to:
+- See all your documents and public documents
+- Toggle a document between private ↔ public
+- Delete a document (removes from Qdrant and SQLite)
+
+---
+
+## Docker (all services)
+
+```bash
+docker compose up --build
+```
+
+> The Inngest dev server is not included in Docker Compose — run it on the host.
+> For production deployment: https://www.inngest.com/docs/deploy
 
 ---
 
 ## Test the ingest function manually (Inngest UI)
 
-In the Inngest dev UI (http://localhost:8288), you can trigger `rag/ingest_pdf` manually:
+In the Inngest dev UI (http://localhost:8288), trigger `rag/ingest_pdf`:
 
 ```json
 {
   "data": {
     "pdf_path": "/absolute/path/to/your/document.pdf",
-    "source_id": "my-document.pdf"
+    "source_id": "my-document.pdf",
+    "user_id": "test-user",
+    "visibility": "public"
   }
 }
 ```
 
 ---
 
-## Rate limiting (already configured)
+## Rate limits (configured)
 
-The ingest function is protected by:
-- **Throttle:** max 2 requests per minute
-- **Rate limit:** max 1 ingest per `source_id` every 4 hours (prevents re-ingesting the same document)
+| Function | Limit |
+|----------|-------|
+| Ingest | Throttle: 2 req/min; Rate limit: 1 per `source_id` per 4h |
+| Query | Rate limit: 10 req/min per `user_id` |
 
 ---
 
-## Next steps
+## Resetting the vector database
 
-- See `docs/` for architecture details, access control design, and improvement suggestions.
-- For production deployment, refer to the [Inngest deployment docs](https://www.inngest.com/docs).
+```bash
+docker stop qdrantRagDb && docker rm qdrantRagDb
+rm -rf qdrant_storage ragapp.db
+```
+
+> **Required after upgrading** from the original version — the collection schema changed (hybrid vectors).
+
+---
+
+## See also
+
+- `docs/architecture.md` — system diagram and config reference
+- `docs/setup.md` — detailed setup guide
+- `docs/access-control.md` — public/private document design
+- `docs/improvements.md` — improvement history
