@@ -2,7 +2,6 @@ import asyncio
 import json
 import os
 import time
-import uuid
 from pathlib import Path
 
 import requests
@@ -11,6 +10,7 @@ import inngest
 from dotenv import load_dotenv
 
 from styles import inject_css, render_sidebar
+from auth import resolve_identity
 
 load_dotenv()
 
@@ -18,13 +18,10 @@ st.set_page_config(page_title="RAG Assistant", page_icon="⚡", layout="centered
 inject_css()
 
 # ---------------------------------------------------------------------------
-# Session identity — one stable UUID per browser session
+# Persistent identity — derived from a user-held access key
 # ---------------------------------------------------------------------------
-if "user_id" not in st.session_state:
-    st.session_state["user_id"] = str(uuid.uuid4())
-
-USER_ID: str = st.session_state["user_id"]
-render_sidebar(USER_ID)
+USER_ID, ACCESS_KEY, IS_NEW = resolve_identity()
+render_sidebar(USER_ID, ACCESS_KEY, IS_NEW)
 
 # ---------------------------------------------------------------------------
 # Helpers (logic unchanged)
