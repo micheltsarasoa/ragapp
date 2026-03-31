@@ -1,22 +1,17 @@
 """Document management page — list, toggle visibility, and delete documents."""
 
-import uuid
-
 import streamlit as st
 
 import db
 from vector_db import QdrantStorage
 from styles import inject_css, render_sidebar
+from auth import resolve_identity
 
 st.set_page_config(page_title="Manage Documents", page_icon="🗂️", layout="wide")
 inject_css()
 
-# Reuse the same session user_id as the main page
-if "user_id" not in st.session_state:
-    st.session_state["user_id"] = str(uuid.uuid4())
-
-USER_ID: str = st.session_state["user_id"]
-render_sidebar(USER_ID)
+USER_ID, ACCESS_KEY, IS_NEW = resolve_identity()
+render_sidebar(USER_ID, ACCESS_KEY, IS_NEW)
 
 db.init_db()
 

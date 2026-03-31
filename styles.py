@@ -308,22 +308,57 @@ def inject_css() -> None:
     st.markdown(f"<style>{_CSS}</style>", unsafe_allow_html=True)
 
 
-def render_sidebar(user_id: str) -> None:
-    """Render the branded sidebar with navigation and session info."""
+def render_sidebar(user_id: str, access_key: str, is_new: bool = False) -> None:
+    """Render the branded sidebar with navigation and persistent key UI."""
+    from auth import apply_key  # local import to avoid circular at module level
+
     with st.sidebar:
         st.markdown(
-            f"""
+            """
             <div class="sidebar-brand">
                 <h2>⚡ RAG Assistant</h2>
                 <p>Retrieval-Augmented Generation</p>
-                <div class="session-box">
-                    <div class="s-label">Session ID</div>
-                    <div class="s-value">{user_id}</div>
-                </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
+
+        # ── Access key section ──────────────────────────────────────────────
+        st.markdown(
+            "<p style='font-size:0.72rem;font-weight:700;text-transform:uppercase;"
+            "letter-spacing:0.07em;color:#6366f1;margin-bottom:0.3rem'>🔑 Access Key</p>",
+            unsafe_allow_html=True,
+        )
+
+        if is_new:
+            st.warning(
+                "New key generated — **save it** to keep access to your private documents.",
+                icon="⚠️",
+            )
+
+        st.code(access_key, language=None)
+        st.caption(
+            "This key identifies you. Same key = same private documents, "
+            "across sessions and devices."
+        )
+
+        with st.expander("🔄  Change / restore key"):
+            with st.form("change_key_form", clear_on_submit=True):
+                new_key = st.text_input(
+                    "Your key",
+                    placeholder="e.g. A3F7B2C1",
+                    label_visibility="collapsed",
+                )
+                if st.form_submit_button("Apply", use_container_width=True):
+                    if new_key.strip():
+                        apply_key(new_key.strip())
+                        st.rerun()
+                    else:
+                        st.error("Key cannot be empty.")
+
+        st.divider()
+
+        # ── Navigation ──────────────────────────────────────────────────────
         st.page_link("streamlit_app.py", label="🏠  Upload & Ask")
         st.page_link("pages/1_Manage_Documents.py", label="🗂️  Manage Documents")
         st.divider()
