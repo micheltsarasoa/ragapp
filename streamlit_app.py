@@ -24,6 +24,76 @@ USER_ID, ACCESS_KEY, IS_NEW = resolve_identity()
 render_sidebar(USER_ID, ACCESS_KEY, IS_NEW)
 
 # ---------------------------------------------------------------------------
+# LLM provider picker (sidebar, below navigation)
+# ---------------------------------------------------------------------------
+
+_PRESETS = {
+    "Groq": {
+        "base_url": "https://api.groq.com/openai/v1",
+        "default_model": "llama3-8b-8192",
+        "needs_key": True,
+    },
+    "Ollama (local)": {
+        "base_url": "http://localhost:11434/v1",
+        "default_model": "llama3.2",
+        "needs_key": False,
+    },
+    "Custom": {
+        "base_url": "",
+        "default_model": "",
+        "needs_key": True,
+    },
+}
+
+with st.sidebar:
+    with st.expander("🤖  LLM Provider"):
+        provider = st.selectbox(
+            "Provider",
+            list(_PRESETS.keys()),
+            key="llm_provider_select",
+        )
+        preset = _PRESETS[provider]
+
+        model = st.text_input(
+            "Model",
+            value=st.session_state.get("llm_model_val", preset["default_model"]),
+            key=f"llm_model_{provider}",
+        )
+        base_url = st.text_input(
+            "Base URL",
+            value=preset["base_url"] if provider != "Custom" else st.session_state.get("llm_url_val", ""),
+            disabled=(provider != "Custom" and provider != "Ollama (local)"),
+            key=f"llm_url_{provider}",
+        )
+        api_key_input = st.text_input(
+            "API Key",
+            value="" if not preset["needs_key"] else st.session_state.get("llm_key_val", ""),
+            type="password",
+            placeholder="not required" if not preset["needs_key"] else "sk-...",
+            disabled=not preset["needs_key"],
+            key=f"llm_key_{provider}",
+        )
+
+        if st.button("Apply", key="llm_apply_btn", use_container_width=True):
+            effective_key = "ollama" if not preset["needs_key"] else api_key_input
+            effective_url = base_url if base_url else preset["base_url"]
+            try:
+                resp = requests.post(
+                    f"{_api_base()}/api/llm_config",
+                    json={"base_url": effective_url, "api_key": effective_key, "model": model},
+                    timeout=5,
+                )
+                if resp.ok:
+                    st.success(f"Switched to **{model}**")
+                    st.session_state["llm_model_val"] = model
+                    st.session_state["llm_url_val"] = effective_url
+                    st.session_state["llm_key_val"] = effective_key
+                else:
+                    st.error(f"API error {resp.status_code}")
+            except Exception as exc:
+                st.error(f"Could not reach API: {exc}")
+
+# ---------------------------------------------------------------------------
 # Helpers (logic unchanged)
 # ---------------------------------------------------------------------------
 

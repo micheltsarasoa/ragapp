@@ -10,3 +10,8 @@ wheels/
 .venv
 /uploads
 .env
+
+uv.lock
+.gitignore
+pyproject.toml
+.python-version

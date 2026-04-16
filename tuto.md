@@ -10,8 +10,7 @@ A Retrieval-Augmented Generation app that lets you upload documents and ask ques
 
 ```bash
 uv init .
-uv add fastapi inngest llama-index-core llama-index-readers-file python-dotenv \
-       qdrant-client uvicorn streamlit openai fastembed docx2txt
+uv add fastapi inngest llama-index-core llama-index-readers-file python-dotenv qdrant-client uvicorn streamlit openai fastembed docx2txt
 ```
 
 > **Note:** `fastembed` downloads embedding model weights on first run (~130 MB). No OpenAI key required for embeddings.

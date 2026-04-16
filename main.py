@@ -10,6 +10,7 @@ from fastapi.responses import StreamingResponse
 import inngest
 import inngest.fast_api
 from openai import AsyncOpenAI, OpenAI
+from pydantic import BaseModel
 
 import db
 from custom_types import RAGChunkAndSrc, RAGUpsertResult, RAGSearchResult
@@ -19,7 +20,23 @@ from vector_db import QdrantStorage, build_access_filter
 load_dotenv()
 db.init_db()
 
-LLM_MODEL = os.getenv("LLM_MODEL", "llama3-8b-8192")
+# ---------------------------------------------------------------------------
+# LLM config — mutable at runtime via POST /api/llm_config
+# ---------------------------------------------------------------------------
+
+_active_llm: dict = {
+    "base_url": os.getenv("LLM_BASE_URL", "https://api.groq.com/openai/v1"),
+    "api_key": os.getenv("GROQ_API_KEY", ""),
+    "model": os.getenv("LLM_MODEL", "llama3-8b-8192"),
+}
+
+
+def _sync_client() -> OpenAI:
+    return OpenAI(api_key=_active_llm["api_key"], base_url=_active_llm["base_url"])
+
+
+def _async_client() -> AsyncOpenAI:
+    return AsyncOpenAI(api_key=_active_llm["api_key"], base_url=_active_llm["base_url"])
 
 inngest_client = inngest.Inngest(
     app_id="rag_app",
@@ -134,12 +151,9 @@ async def rag_query_pdf_ai(ctx: inngest.Context):
     ]
 
     def _llm_answer() -> dict:
-        client = OpenAI(
-            api_key=os.getenv("GROQ_API_KEY"),
-            base_url="https://api.groq.com/openai/v1",
-        )
+        client = _sync_client()
         resp = client.chat.completions.create(
-            model=LLM_MODEL,
+            model=_active_llm["model"],
             max_tokens=1024,
             temperature=0.2,
             messages=messages,
@@ -185,12 +199,9 @@ async def stream_query(question: str, top_k: int = 5, user_id: str = "anonymous"
     ]
 
     async def generate():
-        client = AsyncOpenAI(
-            api_key=os.getenv("GROQ_API_KEY"),
-            base_url="https://api.groq.com/openai/v1",
-        )
+        client = _async_client()
         stream = await client.chat.completions.create(
-            model=LLM_MODEL,
+            model=_active_llm["model"],
             max_tokens=1024,
             temperature=0.2,
             messages=messages,
@@ -207,6 +218,33 @@ async def stream_query(question: str, top_k: int = 5, user_id: str = "anonymous"
         }) + "\n"
 
     return StreamingResponse(generate(), media_type="application/x-ndjson")
+
+
+# ---------------------------------------------------------------------------
+# LLM config endpoints
+# ---------------------------------------------------------------------------
+
+class LLMConfig(BaseModel):
+    base_url: str
+    api_key: str
+    model: str
+
+
+@app.get("/api/llm_config")
+def get_llm_config():
+    """Return the active LLM config (API key masked)."""
+    return {
+        "base_url": _active_llm["base_url"],
+        "model": _active_llm["model"],
+        "api_key_set": bool(_active_llm["api_key"]),
+    }
+
+
+@app.post("/api/llm_config")
+def set_llm_config(cfg: LLMConfig):
+    """Hot-swap the LLM provider without restarting the server."""
+    _active_llm.update(cfg.model_dump())
+    return {"status": "ok", "model": cfg.model, "base_url": cfg.base_url}
 
 
 inngest.fast_api.serve(app, inngest_client, [rag_ingest_pdf, rag_query_pdf_ai])
