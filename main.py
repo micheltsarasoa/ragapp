@@ -53,7 +53,7 @@ inngest_client = inngest.Inngest(
 @inngest_client.create_function(
     fn_id="RAG: Ingest Document",
     trigger=inngest.TriggerEvent(event="rag/ingest_pdf"),
-    throttle=inngest.Throttle(count=2, period=datetime.timedelta(minutes=1)),
+    throttle=inngest.Throttle(limit=2, period=datetime.timedelta(minutes=1)),
     rate_limit=inngest.RateLimit(
         limit=1,
         period=datetime.timedelta(hours=4),
@@ -199,23 +199,26 @@ async def stream_query(question: str, top_k: int = 5, user_id: str = "anonymous"
     ]
 
     async def generate():
-        client = _async_client()
-        stream = await client.chat.completions.create(
-            model=_active_llm["model"],
-            max_tokens=1024,
-            temperature=0.2,
-            messages=messages,
-            stream=True,
-        )
-        async for chunk in stream:
-            token = chunk.choices[0].delta.content or ""
-            if token:
-                yield json.dumps({"type": "token", "content": token}) + "\n"
-        yield json.dumps({
-            "type": "done",
-            "sources": found["sources"],
-            "scores": found["scores"],
-        }) + "\n"
+        try:
+            client = _async_client()
+            stream = await client.chat.completions.create(
+                model=_active_llm["model"],
+                max_tokens=1024,
+                temperature=0.2,
+                messages=messages,
+                stream=True,
+            )
+            async for chunk in stream:
+                token = chunk.choices[0].delta.content or ""
+                if token:
+                    yield json.dumps({"type": "token", "content": token}) + "\n"
+            yield json.dumps({
+                "type": "done",
+                "sources": found["sources"],
+                "scores": found["scores"],
+            }) + "\n"
+        except Exception as e:
+            yield json.dumps({"type": "error", "content": str(e)}) + "\n"
 
     return StreamingResponse(generate(), media_type="application/x-ndjson")
 

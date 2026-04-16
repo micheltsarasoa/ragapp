@@ -14,6 +14,15 @@ from auth import resolve_identity
 
 load_dotenv()
 
+
+def _api_base() -> str:
+    return os.getenv("API_BASE", "http://127.0.0.1:8000")
+
+
+def _inngest_api_base() -> str:
+    return os.getenv("INNGEST_API_BASE", "http://127.0.0.1:8288/v1")
+
+
 st.set_page_config(page_title="RAG Assistant", page_icon="⚡", layout="centered")
 inject_css()
 
@@ -102,14 +111,6 @@ def get_inngest_client() -> inngest.Inngest:
     return inngest.Inngest(app_id="rag_app", is_production=False)
 
 
-def _api_base() -> str:
-    return os.getenv("API_BASE", "http://127.0.0.1:8000")
-
-
-def _inngest_api_base() -> str:
-    return os.getenv("INNGEST_API_BASE", "http://127.0.0.1:8288/v1")
-
-
 SUPPORTED_TYPES = ["pdf", "docx", "txt", "md"]
 
 
@@ -182,7 +183,9 @@ def _token_stream(question: str, top_k: int):
             if not raw_line:
                 continue
             msg = json.loads(raw_line)
-            if msg["type"] == "token":
+            if msg["type"] == "error":
+                raise RuntimeError(f"Backend error: {msg['content']}")
+            elif msg["type"] == "token":
                 yield msg["content"]
             elif msg["type"] == "done":
                 st.session_state["stream_meta"] = {
