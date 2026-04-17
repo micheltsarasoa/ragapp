@@ -1,0 +1,20 @@
+# Secrets — never bake into the image
+.env
+
+# Runtime data — mounted as volumes
+qdrant_storage/
+uploads/
+ragapp.db
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# Dev / repo metadata
+.git/
+.gitignore
+docs/
+*.md
+uv.lock

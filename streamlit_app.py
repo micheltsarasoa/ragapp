@@ -15,6 +15,17 @@ from auth import resolve_identity
 load_dotenv()
 
 
+def _run_async(coro):
+    """Run an async coroutine safely whether or not an event loop is already running."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    import concurrent.futures
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(asyncio.run, coro).result()
+
+
 def _api_base() -> str:
     return os.getenv("API_BASE", "http://127.0.0.1:8000")
 
@@ -150,7 +161,7 @@ async def send_query_event(question: str, top_k: int) -> str:
 
 def fetch_runs(event_id: str) -> list[dict]:
     url = f"{_inngest_api_base()}/events/{event_id}/runs"
-    resp = requests.get(url)
+    resp = requests.get(url, timeout=5)
     resp.raise_for_status()
     return resp.json().get("data", [])
 
@@ -237,7 +248,7 @@ with tab_upload:
         if uploaded is not None:
             with st.spinner("Saving and triggering ingestion…"):
                 path = save_uploaded_file(uploaded)
-                asyncio.run(send_ingest_event(path, visibility))
+                _run_async(send_ingest_event(path, visibility))
                 time.sleep(0.3)
             st.success(f"Triggered ingestion for **{path.name}** ({visibility})")
             st.caption("Processing runs in the background. Switch to the Ask tab once ready.")
@@ -301,7 +312,7 @@ if submitted and question.strip():
         _render_sources(meta.get("sources", []), meta.get("scores", []))
     else:
         with st.spinner("Generating answer…"):
-            event_id = asyncio.run(send_query_event(question.strip(), int(top_k)))
+            event_id = _run_async(send_query_event(question.strip(), int(top_k)))
             output = wait_for_run_output(event_id)
         answer = output.get("answer") or "(No answer)"
         st.markdown(

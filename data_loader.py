@@ -17,6 +17,15 @@ splitter = SentenceSplitter(chunk_size=1000, chunk_overlap=200)
 _SUPPORTED = {".pdf", ".docx", ".txt", ".md"}
 
 
+def _read_text(p: Path) -> str:
+    for enc in ("utf-8", "utf-8-sig", "latin-1"):
+        try:
+            return p.read_text(encoding=enc)
+        except UnicodeDecodeError:
+            continue
+    raise ValueError(f"Could not decode {p.name} with any supported encoding (utf-8, utf-8-sig, latin-1)")
+
+
 def load_and_chunk(path: str) -> list[str]:
     """Load a document and return a list of text chunks.
 
@@ -34,7 +43,7 @@ def load_and_chunk(path: str) -> list[str]:
         docs = DocxReader().load_data(file=p)
         texts = [d.text for d in docs if getattr(d, "text", None)]
     else:  # .txt / .md
-        texts = [p.read_text(encoding="utf-8")]
+        texts = [_read_text(p)]
 
     chunks: list[str] = []
     for t in texts:

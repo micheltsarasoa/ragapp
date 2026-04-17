@@ -3,7 +3,7 @@ import pydantic
 
 class RAGChunkAndSrc(pydantic.BaseModel):
     chunks: list[str]
-    source_id: str = None
+    source_id: str | None = None
     user_id: str = "anonymous"
     visibility: str = "private"
 

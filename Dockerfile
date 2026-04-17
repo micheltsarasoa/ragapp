@@ -1,15 +1,15 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN pip install uv
+RUN pip install uv && apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN uv pip install --system -r requirements.txt
 
 COPY . .
 
-RUN mkdir -p uploads
+RUN mkdir -p uploads data
 
 EXPOSE 8000 8501
 

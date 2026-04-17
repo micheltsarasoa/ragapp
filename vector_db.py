@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
     VectorParams,
@@ -9,6 +11,7 @@ from qdrant_client.models import (
     Filter,
     FieldCondition,
     MatchValue,
+    PayloadSchemaType,
     Prefetch,
     FusionQuery,
     Fusion,
@@ -36,9 +39,16 @@ class QdrantStorage:
                 collection_name=self.collection,
                 vectors_config={"dense": VectorParams(size=EMBED_DIM, distance=Distance.COSINE)},
                 sparse_vectors_config={
-                    "sparse": SparseVectorParams(index=SparseIndexParams(on_disk=False))
+                    "sparse": SparseVectorParams(index=SparseIndexParams(on_disk=True))
                 },
             )
+            # Keyword indexes on filter fields prevent full-collection payload scans.
+            for field in ("user_id", "visibility", "source"):
+                self.client.create_payload_index(
+                    collection_name=self.collection,
+                    field_name=field,
+                    field_schema=PayloadSchemaType.KEYWORD,
+                )
 
     def upsert(self, ids: list, dense_vecs: list, sparse_vecs: list, payloads: list) -> None:
         points = [
@@ -56,6 +66,16 @@ class QdrantStorage:
             for i in range(len(ids))
         ]
         self.client.upsert(self.collection, points=points)
+
+    def update_source_visibility(self, source_id: str, visibility: str) -> None:
+        """Update the visibility payload for all vectors belonging to source_id."""
+        self.client.set_payload(
+            collection_name=self.collection,
+            payload={"visibility": visibility},
+            points=Filter(
+                must=[FieldCondition(key="source", match=MatchValue(value=source_id))]
+            ),
+        )
 
     def delete_by_source(self, source_id: str) -> None:
         """Remove all vectors for a given source before re-ingesting."""
@@ -94,7 +114,8 @@ class QdrantStorage:
             limit=top_k,
         )
 
-        contexts, sources, scores = [], set(), []
+        contexts, scores = [], []
+        seen_sources: dict[str, float] = {}
         for point in response.points:
             payload = getattr(point, "payload", None) or {}
             text = payload.get("text", "")
@@ -102,7 +123,17 @@ class QdrantStorage:
             score = getattr(point, "score", 0.0)
             if text:
                 contexts.append(text)
-                sources.add(source)
                 scores.append(round(score, 4))
+                if source not in seen_sources or score > seen_sources[source]:
+                    seen_sources[source] = round(score, 4)
 
-        return {"contexts": contexts, "sources": list(sources), "scores": scores}
+        return {"contexts": contexts, "sources": list(seen_sources.keys()), "scores": scores}
+
+
+@lru_cache(maxsize=1)
+def get_qdrant_storage(
+    url: str = "http://localhost:6333",
+    collection: str = "docs",
+) -> QdrantStorage:
+    """Return the process-wide QdrantStorage singleton."""
+    return QdrantStorage(url=url, collection=collection)

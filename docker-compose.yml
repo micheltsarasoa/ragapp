@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   qdrant:
     image: qdrant/qdrant:latest
@@ -7,6 +5,12 @@ services:
       - "6333:6333"
     volumes:
       - ./qdrant_storage:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:6333/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   api:
     build:
@@ -15,11 +19,34 @@ services:
     ports:
       - "8000:8000"
     env_file: .env
+    environment:
+      - DB_PATH=/app/data/ragapp.db
     depends_on:
-      - qdrant
+      qdrant:
+        condition: service_healthy
     volumes:
       - ./uploads:/app/uploads
-      - ./ragapp.db:/app/ragapp.db
+      - app_data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/api/llm_config || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  inngest:
+    image: node:20-slim
+    command: >
+      npx --yes inngest-cli@latest dev
+      -u http://api:8000/api/inngest
+      --no-discovery
+      --port 8288
+      --host 0.0.0.0
+    ports:
+      - "8288:8288"
+    depends_on:
+      api:
+        condition: service_healthy
 
   ui:
     build:
@@ -36,15 +63,13 @@ services:
     env_file: .env
     environment:
       - API_BASE=http://api:8000
-      - INNGEST_API_BASE=http://host.docker.internal:8288/v1
+      - INNGEST_API_BASE=http://inngest:8288/v1
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     volumes:
       - ./uploads:/app/uploads
-      - ./ragapp.db:/app/ragapp.db
+      - app_data:/app/data
 
-# NOTE: The Inngest dev server is not containerised here because it's a
-# Node.js CLI tool intended for local development only.
-# Run it on the host with:
-#   npx inngest-cli@latest dev -u http://127.0.0.1:8000/api/inngest --no-discovery
-# For production, follow https://www.inngest.com/docs/deploy
+volumes:
+  app_data:
