@@ -1,0 +1,11 @@
+# Exclude host node_modules — they contain OS-specific native binaries (Windows rollup/esbuild).
+# COPY . . would overwrite the Linux binaries installed by npm ci in the builder stage,
+# causing vite build to fail with platform errors.
+node_modules
+
+# Exclude previous build output — the builder stage produces a fresh dist anyway.
+dist
+
+.git
+.env
+.env.*

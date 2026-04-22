@@ -1,0 +1,9 @@
+{
+  "name": "ragapp",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev:frontend": "pnpm --filter @ragapp/frontend dev",
+    "build:frontend": "pnpm --filter @ragapp/frontend build"
+  }
+}

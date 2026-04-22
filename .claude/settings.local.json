@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.py$\")",
+      "Bash(uv pip *)",
+      "Bash(timeout 30 uv run python -c ' *)",
+      "WebSearch"
+    ]
+  }
+}

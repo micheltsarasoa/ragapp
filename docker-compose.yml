@@ -12,9 +12,9 @@ services:
       retries: 5
       start_period: 10s
 
-  api:
+  backend:
     build:
-      context: .
+      context: ./apps/backend
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
@@ -38,38 +38,25 @@ services:
     image: node:20-slim
     command: >
       npx --yes inngest-cli@latest dev
-      -u http://api:8000/api/inngest
+      -u http://backend:8000/api/inngest
       --no-discovery
       --port 8288
       --host 0.0.0.0
     ports:
       - "8288:8288"
     depends_on:
-      api:
+      backend:
         condition: service_healthy
 
-  ui:
+  frontend:
     build:
-      context: .
+      context: ./apps/frontend
       dockerfile: Dockerfile
-    command:
-      [
-        "streamlit", "run", "streamlit_app.py",
-        "--server.port=8501",
-        "--server.address=0.0.0.0"
-      ]
     ports:
-      - "8501:8501"
-    env_file: .env
-    environment:
-      - API_BASE=http://api:8000
-      - INNGEST_API_BASE=http://inngest:8288/v1
+      - "80:80"
     depends_on:
-      api:
+      backend:
         condition: service_healthy
-    volumes:
-      - ./uploads:/app/uploads
-      - app_data:/app/data
 
 volumes:
   app_data:

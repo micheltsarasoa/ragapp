@@ -1,0 +1,161 @@
+@custom-variant dark (&:is(.dark *));
+
+/* ─── Design tokens ──────────────────────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --background:  #0F1117;
+  --surface-l1:  #161B22;
+  --surface-l2:  #1E2430;
+  --surface-l3:  #252D3A;
+
+  /* Accent */
+  --accent-blue:       #0066FF;
+  --accent-blue-hover: #0052CC;
+
+  /* Semantic */
+  --success-green:      #22C55E;
+  --success-green-dark: #14532D;
+  --warning-yellow:      #EAB308;
+  --warning-yellow-dark: #451A03;
+  --danger:              #d4183d;
+
+  /* Text */
+  --text-primary:   #F0F4F8;
+  --text-secondary: #8B9CB0;
+  --text-muted:     #7A8FA3;
+
+  /* Borders */
+  --border-subtle:  rgba(255,255,255,0.08);
+  --border-default: rgba(255,255,255,0.12);
+  --border-strong:  rgba(255,255,255,0.15);
+
+  /* Misc */
+  --radius: 0.5rem;
+  --font-size: 16px;
+
+  /* ── Legacy aliases (used by shadcn/ui components) ── */
+  --foreground:           var(--text-primary);
+  --card:                 var(--surface-l1);
+  --card-foreground:      var(--text-primary);
+  --popover:              var(--surface-l2);
+  --popover-foreground:   var(--text-primary);
+  --primary:              var(--accent-blue);
+  --primary-foreground:   #ffffff;
+  --secondary:            var(--surface-l2);
+  --secondary-foreground: var(--text-primary);
+  --muted:                var(--surface-l3);
+  --muted-foreground:     var(--text-secondary);
+  --accent:               var(--accent-blue);
+  --accent-foreground:    #ffffff;
+  --destructive:          var(--danger);
+  --destructive-foreground: #ffffff;
+  --border:               var(--border-default);
+  --input:                var(--border-default);
+  --input-background:     var(--surface-l2);
+  --switch-background:    var(--surface-l3);
+  --ring:                 var(--accent-blue);
+  --font-weight-medium:   500;
+  --font-weight-normal:   400;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* ─── Tailwind v4 color bridge ───────────────────────────────────────────── */
+@theme inline {
+  /* Surface scale */
+  --color-background: var(--background);
+  --color-surface-1:  var(--surface-l1);
+  --color-surface-2:  var(--surface-l2);
+  --color-surface-3:  var(--surface-l3);
+
+  /* Accent */
+  --color-accent:       var(--accent-blue);
+  --color-accent-hover: var(--accent-blue-hover);
+
+  /* Text */
+  --color-primary:   var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-muted-fg:  var(--text-muted);
+
+  /* Semantic */
+  --color-success:      var(--success-green);
+  --color-success-dark: var(--success-green-dark);
+  --color-warning:      var(--warning-yellow);
+  --color-warning-dark: var(--warning-yellow-dark);
+  --color-danger:       var(--danger);
+
+  /* Border */
+  --color-border-subtle:  var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-strong:  var(--border-strong);
+
+  /* shadcn legacy — note: --color-primary and --color-secondary intentionally
+     omitted here; they are defined above as text-color tokens and must not
+     be overridden with surface/accent values from the shadcn alias layer. */
+  --color-foreground:           var(--foreground);
+  --color-card:                 var(--card);
+  --color-card-foreground:      var(--card-foreground);
+  --color-popover:              var(--popover);
+  --color-popover-foreground:   var(--popover-foreground);
+  --color-primary-foreground:   var(--primary-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted:                var(--muted);
+  --color-muted-foreground:     var(--muted-foreground);
+  --color-accent-foreground:    var(--accent-foreground);
+  --color-destructive:          var(--destructive);
+  --color-border:               var(--border);
+  --color-input:                var(--input);
+  --color-input-background:     var(--input-background);
+  --color-ring:                 var(--ring);
+  --color-sidebar:              var(--surface-l1);
+  --color-sidebar-foreground:   var(--text-primary);
+}
+
+/* ─── Base layer ─────────────────────────────────────────────────────────── */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    font-size: var(--font-size);
+  }
+
+  body {
+    background-color: var(--background);
+    /* Subtle top-blue ambient — echoes the accent without competing with content */
+    background-image: radial-gradient(ellipse 80% 40% at 50% -5%, rgba(0,102,255,0.07), transparent);
+    color: var(--text-primary);
+  }
+
+  h1 { font-size: var(--text-2xl); font-weight: 500; line-height: 1.4; }
+  h2 { font-size: var(--text-xl);  font-weight: 500; line-height: 1.4; }
+  h3 { font-size: var(--text-lg);  font-weight: 500; line-height: 1.4; }
+  h4 { font-size: var(--text-base); font-weight: 500; line-height: 1.5; }
+
+  button { font-family: inherit; }
+  input  { font-family: inherit; }
+}
+
+/* ─── Animations ─────────────────────────────────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-up  { animation: fade-up  0.2s ease both; }
+.animate-fade-in  { animation: fade-in  0.15s ease both; }
+.animate-scale-in { animation: scale-in 0.2s ease both; }

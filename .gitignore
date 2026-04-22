@@ -1,17 +1,26 @@
-# Python-generated files
+# Node
+node_modules/
+dist/
+.pnpm-store/
+pnpm-debug.log*
+
+# Python
 __pycache__/
 *.py[oc]
 build/
-dist/
 wheels/
 *.egg-info
-
-# Virtual environments
 .venv
-/uploads
-.env
-
 uv.lock
-.gitignore
 pyproject.toml
 .python-version
+
+# ML model cache (fastembed downloads ONNX weights here)
+.fastembed_cache/
+
+# Runtime data (volumes)
+/uploads/
+/qdrant_storage/
+
+# Secrets
+.env

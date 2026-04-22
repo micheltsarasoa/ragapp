@@ -1,0 +1,299 @@
+You are a senior product designer specializing in enterprise AI web applications. 
+Design a complete, high-fidelity Figma prototype for "RAG Assistant" — an 
+enterprise Retrieval-Augmented Generation knowledge management platform.
+
+Use the attached reference image as the primary layout and dark-mode color 
+inspiration. Match its aesthetic fidelity precisely.
+
+---
+
+## DESIGN SYSTEM — apply globally
+
+**Color palette (dark mode — primary)**
+- Background base: #0F1117
+- Surface level 1 (panels): #161B22
+- Surface level 2 (cards, inputs): #1E2430
+- Surface level 3 (hover states): #252D3A
+- Accent blue (primary action): #0066FF
+- Accent blue hover: #0052CC
+- Success green: #22C55E
+- Warning yellow: #EAB308
+- Text primary: #F0F4F8
+- Text secondary: #8B9CB0
+- Text muted: #4A5568
+- Border subtle: rgba(255,255,255,0.08)
+- Border default: rgba(255,255,255,0.12)
+
+**Typography**
+- Font family: Inter
+- Heading/label: 12px, weight 500, letter-spacing 0.08em, color Text Secondary (used for section labels like "WORKSPACE", "PROJECTS", "TAGS")
+- Body: 14px, weight 400, color Text Primary
+- Caption: 12px, weight 400, color Text Muted
+- Code/key values: 14px, font-family JetBrains Mono, color Text Primary
+
+**Spacing system**: 4px base unit. Use multiples: 4, 8, 12, 16, 20, 24, 32, 40, 48
+
+**Border radius**: 
+- Small (tags, badges): 4px
+- Default (inputs, items): 8px
+- Large (cards, panels): 12px
+- XL (modals): 16px
+
+**Iconography**: Lucide Icons, 16px stroke, weight 1.5
+
+---
+
+## LAYOUT — Full-width, 100vh, three-column flex
+
+Frame size: 1440 × 900px (desktop). No scrollbars on outer frame.
+
+| Column | Width | Purpose |
+|--------|-------|---------|
+| Left Sidebar | 280px, fixed | Navigation + configuration |
+| Center Panel | flex 1, ~580px | Knowledge management |
+| Right Panel | 440px, fixed | AI Chat |
+
+Vertical dividers: 1px solid border-subtle between each column.
+All three columns are full height. Internal content scrollable independently.
+
+---
+
+## COLUMN 1 — LEFT SIDEBAR (280px)
+
+Background: #161B22
+
+### 1.1 — Top: User identity
+Padding: 20px 16px 16px
+- Avatar: 32×32px circle, purple gradient (#7C3AED → #4F46E5), initials "MT"
+- Name: "Mike Taylor", 14px weight 500, Text Primary
+- Chevron down icon (16px) at right edge
+- Bottom border: 1px border-subtle, margin-bottom 16px
+
+### 1.2 — WORKSPACE section
+Label: "WORKSPACE" — 11px, weight 600, letter-spacing 0.1em, Text Muted
+Items: 36px height, 8px border-radius, padding 0 12px
+- 🏠 "Home" — SELECTED STATE: full-width highlight bar, background #0066FF, text white, home icon blue-tinted
+- 👥 "Team" — default state
+
+### 1.3 — PROJECTS section
+Label: "PROJECTS" — same label style
+- 📐 "Design System" — expandable, chevron right icon
+  - Indented children (padding-left 28px): "Documentation", "Components", "Tokens"
+- 📊 "Marketing" — expandable
+  - Indented child: "Q3_Assets"
+
+### 1.4 — TAGS section
+Label: "TAGS"
+- 🔵 "Urgent" — dot indicator #3B82F6, 8px circle
+- ⚫ "Reviewed" — dot indicator #4A5568, 8px circle
+
+### 1.5 — SEPARATOR (divider, 1px, full width, border-subtle)
+
+### 1.6 — ACCESS KEY component
+Padding: 16px
+Header row: key emoji icon + "ACCESS KEY" label (11px, 600 weight, #F59E0B — amber)
+Value: "42E6CEE4" — 16px, JetBrains Mono, Text Primary, margin-top 4px
+Description: "This key identifies you. Same key = same private documents, across sessions and devices." — 11px, Text Muted, margin-top 6px, line-height 1.5
+Button "↺ Change / restore key": full-width, 36px height, background Surface L2, border border-subtle, 8px radius, 12px text, Text Secondary, left-aligned with > arrow icon prefix
+
+EXPANDED STATE (show as separate frame or component variant):
+- A text input replaces the key display, placeholder "Enter your key...", with Save + Cancel buttons
+
+### 1.7 — SEPARATOR
+
+### 1.8 — Bottom section
+- "⚙️ LLM Provider Management" button: full-width, 40px height, background Surface L2, border 1px border-subtle, 8px radius. Left: settings gear icon (Lucide) + label "LLM Provider Management" (13px, Text Secondary). Right: Lucide ExternalLink icon (14px, Text Muted). ON HOVER: background Surface L3.
+- Below button: "⚡ Powered by Qdrant · Inngest · Groq" — 10px, Text Muted, text-align center, margin-top 8px
+
+---
+
+## MODAL — LLM Provider Management
+
+Trigger: click "LLM Provider Management" button
+Design as a separate Figma frame connected with a prototype interaction (overlay, centered, fade in).
+
+**Modal specs:**
+- Width: 480px
+- Background: #1E2430
+- Border: 1px solid rgba(255,255,255,0.15)
+- Border radius: 16px
+- Box shadow: 0 24px 48px rgba(0,0,0,0.6)
+- Padding: 28px
+
+**Modal header:**
+- Title "LLM Provider Management" — 18px, weight 600, Text Primary
+- Subtitle "Configure your AI inference backend" — 13px, Text Muted, margin-top 4px
+- X close button top-right (Lucide X icon, 20px)
+- Separator below header
+
+**Form fields (all full-width, stacked with 16px gap):**
+
+Field label style: 12px, weight 500, Text Secondary, margin-bottom 6px
+Input style: full-width, 40px height, background #0F1117, border 1px border-default, 8px radius, 14px Text Primary, padding 0 12px
+
+1. **Provider** (select/dropdown)
+   - Label: "Provider"
+   - Value shown: "Ollama (local)"
+   - Right chevron-down icon inside input
+   - Dropdown options: Ollama (local), OpenAI, Anthropic, Groq, Azure OpenAI
+
+2. **Model** (text input)
+   - Label: "Model"
+   - Value: "gemma3:1b"
+
+3. **Base URL** (text input)
+   - Label: "Base URL"
+   - Value: "http://localhost:11434"
+
+4. **API Key** (password input)
+   - Label: "API Key"
+   - Placeholder: "not required" (italic, Text Muted)
+   - Right side: eye icon toggle (Lucide Eye / EyeOff), 16px, Text Muted
+
+5. **Apply button**: full-width, 44px height, background #0066FF, border-radius 8px, "Apply" label 14px weight 600 white, center-aligned
+
+6. **Success notification strip** (show as variant state, triggered after Apply):
+   - Full-width, background #14532D, border 1px #22C55E, border-radius 8px, padding 10px 16px
+   - Content: checkmark icon (green) + "Switched to " + "gemma3:1b" (bold, #22C55E)
+   - Position: between Apply button and bottom of modal
+   - Note: fades out after 3 seconds (annotate with Figma prototype timer if supported)
+
+---
+
+## COLUMN 2 — CENTER PANEL (flex 1)
+
+Background: #0F1117
+Padding: 24px
+
+### 2.1 — Panel header
+"Upload Knowledge" — 20px, weight 600, Text Primary
+No border below, just spacing gap (24px)
+
+### 2.2 — Upload Drop Zone
+Full-width, height 160px
+Background: transparent
+Border: 2px dashed rgba(255,255,255,0.15)
+Border-radius: 12px
+Content (centered vertically + horizontally):
+- Upload cloud icon (Lucide UploadCloud, 32px, Text Muted)
+- "Click to upload or drag and drop" — 14px, weight 500, Text Primary, margin-top 12px
+- "PDF, TXT, MD or DOCX (max. 10MB)" — 12px, Text Muted, margin-top 4px
+
+HOVER/DRAG-OVER variant:
+- Border: 2px dashed #0066FF
+- Background: rgba(0,102,255,0.06)
+- Icon color: #0066FF
+
+### 2.3 — Breadcrumb + action row
+Left: "Home" (Text Muted, 13px) › "Knowledge Base" (Text Primary, 13px, weight 500)
+Right: grid-view toggle icon (Lucide LayoutGrid, 18px, Text Muted) + "+ Add New" button (background #0066FF, 8px radius, 32px height, 13px white, Lucide Plus icon prefix)
+
+### 2.4 — Knowledge Base file list
+Background: Surface L1 (#161B22)
+Border-radius: 12px
+Overflow: hidden
+
+Table header row: 40px height, background transparent, border-bottom 1px border-subtle
+Columns: "FILE NAME ↓" | "STATUS" | "ADDED" | "SIZE"
+Header text: 11px, weight 600, Text Muted, letter-spacing 0.05em
+
+**Row 1 — Product_Specs.pdf**
+Height: 52px, hover background Surface L2
+- File icon: Lucide FileText, 18px, #3B82F6 (blue), in 32×32 Surface L2 rounded bg
+- Filename: "Product_Specs.pdf", 14px, weight 500, Text Primary
+- Status badge: "Indexed" — background #14532D, color #22C55E, 12px, 4px radius, padding 2px 8px
+- Added: "Today", 13px, Text Muted
+- Size: "2.4 MB", 13px, Text Muted
+
+**Row 2 — Knowledge_Q1.md**
+Height: 52px
+- File icon: Lucide FileText, 18px, #F59E0B (amber), in 32×32 bg
+- Filename: "Knowledge_Q1.md", 14px, weight 500, Text Primary
+- Status badge: "Processing" — background #451A03, color #EAB308, 12px, 4px radius, padding 2px 8px
+- Added: "Yesterday", 13px, Text Muted
+- Size: "14 KB", 13px, Text Muted
+
+---
+
+## COLUMN 3 — RIGHT PANEL: AI CHAT (440px)
+
+Background: #161B22
+Full height, flex column
+
+### 3.1 — Chat header (64px height)
+Border-bottom: 1px border-subtle
+Padding: 0 20px
+Left side:
+- Bot icon in 36×36 circle, background linear blue (#0066FF), Lucide Bot icon white 18px
+- "AI Assistant" — 16px weight 600, Text Primary
+- "● RAG Active" below — 11px, weight 500, #22C55E (green dot + text)
+Right side: Lucide Plus icon 20px, Text Muted (new chat)
+
+### 3.2 — Chat messages area (flex 1, overflow-y auto)
+Padding: 20px
+Gap between messages: 20px
+
+**Message 1 — BOT (left-aligned)**
+Avatar: same bot icon circle (28px)
+Bubble: background Surface L2, border-radius 0 12px 12px 12px, padding 12px 16px, max-width 85%
+Content: "Hello! I'm ready to answer questions about your knowledge base. I have indexed " + "Product_Specs_v2.pdf" (hyperlink style: #0066FF, underline, cursor pointer) + "."
+Timestamp: "Just now" — 11px, Text Muted, below bubble, margin-top 4px
+
+**Message 2 — USER (right-aligned)**
+Avatar: 28px circle, purple gradient, initials "MT", right side
+Bubble: background #0066FF, border-radius 12px 0 12px 12px, padding 12px 16px
+Content: "What are the key specs for the V2 product?" — 14px white
+(No timestamp for user messages)
+
+**Message 3 — BOT (left-aligned)**
+Same style as Message 1
+Content: "Based on " + "Product_Specs_v2.pdf" (blue link) + ", the key specifications are:"
+Followed by bullet list (3 items, Lucide dot, 14px):
+- "Processor: Quantum Core i9"
+- "Battery Life: 24 Hours"  
+- "Weight: 1.2kg"
+Timestamp: "Just now"
+
+### 3.3 — Input area (pinned bottom, 80px)
+Border-top: 1px border-subtle
+Padding: 12px 16px
+Input container: full-width, background Surface L2, border 1px border-subtle, border-radius 12px, padding 12px 16px, min-height 48px
+- Placeholder text: "Ask a question about your documents..." — 14px Text Muted
+- Right side: send button, 36×36, background #0066FF, border-radius 8px, Lucide Send icon white 16px. HOVER: background #0052CC
+
+Disclaimer below input: "AI can make mistakes. Verify important information." — 11px Text Muted, centered, margin-top 8px
+
+---
+
+## PROTOTYPE INTERACTIONS (Figma prototype tab)
+
+1. Sidebar "Home" item → already on main frame (no transition)
+2. "Change / restore key" button → toggle Access Key expanded variant (overlay or swap)
+3. "LLM Provider Management" → open LLM modal frame (overlay, fade 200ms)
+4. Modal X button → dismiss overlay
+5. Modal "Apply" button → show success notification state (variant swap)
+6. Chat send button → connect to "Chat with reply" frame (new frame showing echoed message + bot reply)
+7. Drag-over on upload zone → swap to hover variant
+8. "+ Add New" button → no action needed (placeholder state)
+
+---
+
+## ADDITIONAL FRAMES TO DESIGN
+
+1. **Main — Default** (described above)
+2. **Modal — LLM Provider Management** (overlay)
+3. **Sidebar — Access Key expanded** (component variant)
+4. **Upload zone — drag hover state** (component variant)
+5. **Chat — with user echo reply** (new frame after send)
+6. **Empty state** — no files in knowledge base (illustration + CTA)
+
+---
+
+## DESIGN QUALITY NOTES
+
+- Every interactive element must have a clearly visible hover state
+- Use 8px consistent spacing rhythm throughout
+- All text must meet WCAG AA contrast on their respective backgrounds
+- The design should feel "premium SaaS" — similar to Linear, Vercel, or Raycast in polish level
+- Avoid generic dark-mode aesthetics — use subtle depth through layering (L1/L2/L3 surfaces) not shadows
+- No decorative gradients except the avatar/bot icon circles
